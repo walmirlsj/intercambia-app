@@ -366,6 +366,43 @@
   function gp(grp) { return sel[grp] || ''; }
   let fullText = '';
 
+  async function streamChunk(prompt, onToken) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 10000,
+        stream: true,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let msg = `Erro ${res.status}`;
+      try { const j = JSON.parse(text); msg = j.error?.message || j.error || msg; } catch {}
+      throw new Error(msg);
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let text = '';
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break;
+      for (const line of dec.decode(value, { stream: true }).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6); if (data === '[DONE]') continue;
+        try {
+          const p = JSON.parse(data);
+          if (p.type === 'content_block_delta' && p.delta?.text) {
+            text += p.delta.text;
+            onToken(text);
+          }
+        } catch {}
+      }
+    }
+    return text;
+  }
+
   async function gerar() {
     const idioma = v('idioma'), nivel = v('nivel'), duracao = v('duracao'),
           orcamento = v('orcamento'), origem = v('origem');
@@ -382,52 +419,76 @@
     pfill.style.width = '4%'; footer.style.display = 'none';
     document.getElementById('result-meta').textContent = `${idioma} · ${duracao} · ${orcamento}`;
     resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const perfil = `Idioma: ${idioma} | Nível: ${nivel} | Objetivo: ${gp('g-objetivo') || 'Não especificado'} | Curso: ${gp('g-curso') || 'Semi-intensivo (~20h/sem)'} | Duração: ${duracao} | Época: ${v('epoca') || 'Indiferente'} | Orçamento: ${orcamento} | Origem: ${origem} | Idade: ${v('idade') || 'N/I'} | Vai: ${v('acomp')} | Clima: ${v('clima') || 'Indiferente'} | Cidade: ${v('cidade') || 'Indiferente'} | Hospedagem: ${gp('g-hosped') || 'Sem preferência'} | Extras: ${v('extra') || 'Nenhum'}`;
+
+    const base = `Você é o IntercambIA, especialista em intercâmbio linguístico para brasileiros.
+Perfil do usuário: ${perfil}
+Cotações: USD≈R$5,15 | EUR≈R$5,80 | CAD≈R$3,75. Escreva em português brasileiro.`;
+
+    const prompt1 = `${base}
+
+PARTE 1 DE 2 — Produza APENAS:
+1) Cabeçalho resumindo o perfil
+2) Tabela comparativa geral dos 3 destinos que você escolheria para este perfil
+3) Detalhamento COMPLETO da OPÇÃO 1 (primeira cidade): contexto em 2 frases, vantagens/desvantagens, tabela de cursos com todas as modalidades e preços em moeda local e R$, tabela de hospedagem com todas as opções e preços, alimentação+transporte, passagem aérea de ${origem}, resumo de custos com % e total em R$
+4) Detalhamento COMPLETO da OPÇÃO 2 (segunda cidade): mesma estrutura da opção 1
+
+Termine com a linha exata: "---CONTINUA---"
+Não escreva recomendação final nem próximos passos — isso vem na parte 2.`;
+
+    const prompt2 = `${base}
+
+Na PARTE 1 você já gerou: cabeçalho, tabela comparativa, e detalhamento completo das OPÇÕES 1 e 2.
+
+PARTE 2 DE 2 — Produza APENAS:
+1) Detalhamento COMPLETO da OPÇÃO 3 (terceira cidade, diferente das anteriores): contexto em 2 frases, vantagens/desvantagens, tabela de cursos com todas as modalidades e preços em moeda local e R$, tabela de hospedagem com todas as opções e preços, alimentação+transporte, passagem aérea de ${origem}, resumo de custos com % e total em R$
+2) Recomendação final (qual cidade é mais indicada para este perfil e por quê — 1 parágrafo)
+3) Próximos passos (lista numerada com links clicáveis)
+
+Não repita o cabeçalho nem as opções 1 e 2.`;
+
+    fullText = '';
     let prog = 4;
-    const pi = setInterval(() => { prog = Math.min(prog + Math.random() * 2.5, 88); pfill.style.width = prog + '%'; }, 350);
-
-    const prompt = `Você é o IntercambIA, especialista em intercâmbio linguístico para brasileiros. Perfil:
-- Idioma: ${idioma} | Nível: ${nivel} | Objetivo: ${gp('g-objetivo') || 'Não especificado'}
-- Curso: ${gp('g-curso') || 'Semi-intensivo (~20h/sem)'} | Duração: ${duracao} | Época: ${v('epoca') || 'Indiferente'}
-- Orçamento: ${orcamento} | Origem: ${origem} | Idade: ${v('idade') || 'N/I'} | Vai: ${v('acomp')}
-- Clima: ${v('clima') || 'Indiferente'} | Cidade: ${v('cidade') || 'Indiferente'}
-- Hospedagem: ${gp('g-hosped') || 'Sem preferência'} | Extras: ${v('extra') || 'Nenhum'}
-
-Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3 destinos 3) Para cada destino: contexto, vantagens/desvantagens, tabela de cursos (todas modalidades, preço/sem em moeda local e R$, total, ⭐ na escolhida), tabela de hospedagem (todas opções, preço/sem local e R$, total, inclui, distância, ⭐ na recomendada), alimentação, transporte, passagem de ${origem}, resumo de custos com % e total R$ 4) Recomendação final 5) Próximos passos. Cotações: USD≈R$5,15|EUR≈R$5,80|CAD≈R$3,75. Português brasileiro.`;
+    const pi = setInterval(() => { prog = Math.min(prog + Math.random() * 1.5, 45); pfill.style.width = prog + '%'; }, 400);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 18000,
-          stream: true,
-          messages: [{ role: 'user', content: prompt }]
-        })
+      // CHAMADA 1
+      const part1 = await streamChunk(prompt1, (text) => {
+        const clean = text.replace(/---CONTINUA---\s*$/, '');
+        body.innerHTML = md(clean) + '<span class="cursor"></span>';
       });
-      if (!res.ok) {
-        const text = await res.text();
-        let msg = `Erro ${res.status}`;
-        try { const j = JSON.parse(text); msg = j.error?.message || j.error || msg; } catch {}
-        throw new Error(msg);
-      }
-      const reader = res.body.getReader(); const dec = new TextDecoder();
-      fullText = ''; body.innerHTML = '';
-      while (true) {
-        const { done, value } = await reader.read(); if (done) break;
-        for (const line of dec.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6); if (data === '[DONE]') continue;
-          try { const p = JSON.parse(data); if (p.type === 'content_block_delta' && p.delta?.text) { fullText += p.delta.text; body.innerHTML = md(fullText) + '<span class="cursor"></span>'; } } catch {}
-        }
-      }
-      clearInterval(pi); pfill.style.width = '100%';
+
+      // Transição suave para chamada 2
+      clearInterval(pi);
+      pfill.style.width = '50%';
+      let prog2 = 50;
+      const pi2 = setInterval(() => { prog2 = Math.min(prog2 + Math.random() * 1.5, 90); pfill.style.width = prog2 + '%'; }, 400);
+
+      fullText = part1.replace(/---CONTINUA---\s*$/, '').trimEnd();
+      body.innerHTML = md(fullText) + '<span class="cursor"></span>';
+
+      // CHAMADA 2
+      const part2 = await streamChunk(prompt2, (text) => {
+        body.innerHTML = md(fullText + '\n\n' + text) + '<span class="cursor"></span>';
+      });
+
+      clearInterval(pi2);
+      pfill.style.width = '100%';
       setTimeout(() => { pfill.style.width = '0%'; }, 800);
-      body.innerHTML = md(fullText); footer.style.display = 'flex';
+
+      fullText = fullText + '\n\n' + part2;
+      body.innerHTML = md(fullText);
+      footer.style.display = 'flex';
+
     } catch (err) {
-      clearInterval(pi); pfill.style.width = '0%';
-      body.innerHTML = `<div class="error-box"><strong>Erro ao gerar relatório</strong><br><br>${err.message}</div>`;
-    } finally { btn.disabled = false; btn.classList.remove('loading'); }
+      clearInterval(pi);
+      pfill.style.width = '0%';
+      body.innerHTML = (fullText ? md(fullText) + '<hr>' : '') +
+        `<div class="error-box"><strong>Erro ao gerar relatório</strong><br><br>${err.message}</div>`;
+    } finally {
+      btn.disabled = false; btn.classList.remove('loading');
+    }
   }
 
   function md(t) {
