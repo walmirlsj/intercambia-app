@@ -19,8 +19,14 @@ export default async function handler(req, res) {
       body: JSON.stringify(req.body),
     });
 
-    // Repassa o status e os headers de streaming
-    res.status(response.status);
+    if (!response.ok) {
+      const errBody = await response.text();
+      res.status(response.status).json({ error: errBody });
+      return;
+    }
+
+    // Repassa streaming
+    res.status(200);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
