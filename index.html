@@ -403,7 +403,12 @@ Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3
           messages: [{ role: 'user', content: prompt }]
         })
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || `Erro ${res.status}`); }
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = `Erro ${res.status}`;
+        try { const j = JSON.parse(text); msg = j.error?.message || j.error || msg; } catch {}
+        throw new Error(msg);
+      }
       const reader = res.body.getReader(); const dec = new TextDecoder();
       fullText = ''; body.innerHTML = '';
       while (true) {
