@@ -137,9 +137,10 @@
   #result-body li { margin:4px 0; }
   #result-body hr { border:none; border-top:1px solid #2E2418; margin:28px 0; }
   #result-body strong { font-weight:500; color:#EDE0C8; }
-  #result-body table { width:100%; border-collapse:collapse; font-size:13px; margin:16px 0; display:block; overflow-x:auto; }
-  #result-body th { background:#C8922A; color:#0F0C08; padding:9px 14px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; font-weight:500; white-space:nowrap; }
-  #result-body td { padding:9px 14px; border-bottom:1px solid #2E2418; vertical-align:top; color:#C8B898; }
+  #result-body table { width:100%; border-collapse:collapse; font-size:12px; margin:0; table-layout:fixed; }
+  #result-body .tbl-wrap { width:100%; overflow-x:auto; margin:16px 0; border-radius:6px; overflow:hidden; }
+  #result-body th { background:#C8922A; color:#0F0C08; padding:9px 14px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; font-weight:500; white-space:normal; word-break:break-word; }
+  #result-body td { padding:8px 10px; border-bottom:1px solid #2E2418; vertical-align:top; color:#C8B898; word-break:break-word; overflow-wrap:break-word; white-space:normal; }
   #result-body tr:last-child td { border-bottom:none; }
   #result-body tr:nth-child(even) td { background:#141008; }
 
@@ -347,6 +348,7 @@
     <div id="result-body"></div>
     <div class="result-footer" id="result-footer" style="display:none">
       <button class="btn-sec" onclick="copiar()">Copiar relatório</button>
+      <button class="btn-sec" onclick="gerarPDF()">Baixar PDF</button>
       <button class="btn-sec" onclick="novo()">Novo planejamento</button>
     </div>
   </div>
@@ -398,7 +400,7 @@ Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
-          max_tokens: 4000,
+          max_tokens: 8000,
           stream: true,
           messages: [{ role: 'user', content: prompt }]
         })
@@ -435,7 +437,7 @@ Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>')
       .replace(/^---$/gm,'<hr>')
       .replace(/(\|.+\|\n?)+/g, tbl => {
-        const rows = tbl.trim().split('\n'); let h = '<div style="overflow-x:auto"><table>';
+        const rows = tbl.trim().split('\n'); let h = '<div class="tbl-wrap"><table>';
         rows.forEach((r,i) => { if (/^\|[\s\-|:]+\|$/.test(r)) return; const cells = r.split('|').filter((_,j,a)=>j>0&&j<a.length-1); const tag=i===0?'th':'td'; h+='<tr>'+cells.map(c=>`<${tag}>${c.trim()}</${tag}>`).join('')+'</tr>'; });
         return h+'</table></div>';
       })
@@ -443,6 +445,38 @@ Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3
       .replace(/^\d+\. (.+)$/gm,'<li>$1</li>').replace(/\n\n+/g,'</p><p>').replace(/^(?!<)(.+)$/gm,'<p>$1</p>');
   }
 
+
+  function gerarPDF() {
+    const titulo = 'Relatório IntercambIA — ' + document.getElementById('result-meta').textContent;
+    const conteudo = document.getElementById('result-body').innerHTML;
+    const janela = window.open('', '_blank');
+    janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8">
+      <title>${titulo}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #1C1410; line-height: 1.7; padding: 32px; max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 22px; margin-bottom: 12px; }
+        h2 { font-size: 17px; border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-top: 28px; }
+        h3 { font-size: 14px; font-weight: bold; margin-top: 20px; }
+        h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-top: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 14px 0; table-layout: fixed; word-wrap: break-word; }
+        th { background: #B07D2A; color: #fff; padding: 7px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; }
+        td { padding: 7px 10px; border-bottom: 1px solid #ddd; vertical-align: top; word-break: break-word; }
+        tr:nth-child(even) td { background: #f9f6f0; }
+        ul { padding-left: 18px; }
+        li { margin: 3px 0; }
+        hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+        strong { font-weight: bold; }
+        .tbl-wrap { width: 100%; overflow: visible; margin: 14px 0; }
+        @media print { body { padding: 16px; } }
+      </style>
+    </head><body>
+      <h1>${titulo}</h1>
+      ${conteudo}
+    </body></html>`);
+    janela.document.close();
+    setTimeout(() => { janela.focus(); janela.print(); }, 500);
+  }
   function copiar() { navigator.clipboard.writeText(fullText).then(() => { const b=event.target; b.textContent='Copiado!'; setTimeout(()=>b.textContent='Copiar relatório',2000); }); }
   function novo() { document.getElementById('result').classList.remove('show'); window.scrollTo({top:0,behavior:'smooth'}); }
 </script>
