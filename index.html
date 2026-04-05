@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IntercambIA — Planejador de Intercâmbio com IA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0F0C08;
+    color: #EDE0C8;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  .header {
+    background: #0F0C08;
+    border-bottom: 1px solid #2A2218;
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 20px; color: #F5E6C0; }
+  .logo em { color: #C8922A; font-style: italic; }
+  .header-sub { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #C8B898; }
+
+  .hero {
+    background: #0F0C08;
+    padding: 52px 32px 64px;
+    border-bottom: 2px solid #C8922A;
+  }
+  .hero-inner { max-width: 640px; }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(200,146,42,0.12); border: 1px solid rgba(200,146,42,0.35);
+    color: #C8922A; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 100px; margin-bottom: 20px;
+  }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4.5vw, 50px); color: #F5E6C0; line-height: 1.12; margin-bottom: 18px; }
+  .hero h1 em { color: #C8922A; font-style: italic; }
+  .hero p { font-size: 15px; color: #8A7A5A; line-height: 1.7; font-weight: 300; max-width: 480px; }
+
+  .form-wrap { max-width: 840px; margin: 0 auto; padding: 48px 32px 80px; }
+  .form-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #F5E6C0; margin-bottom: 6px; }
+  .form-sub { font-size: 13px; color: #8A7A5A; margin-bottom: 32px; font-weight: 300; }
+
+  .sec-card {
+    background: #1A1510;
+    border: 1px solid #2E2418;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .sec-card-title {
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: #C8922A; font-weight: 500;
+    margin-bottom: 20px; padding-bottom: 10px;
+    border-bottom: 1px solid #2E2418;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .full { grid-column: 1 / -1; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field label { font-size: 12px; color: #8A7A5A; font-weight: 400; }
+
+  .field select, .field textarea {
+    background: #0F0C08;
+    border: 1px solid #3A2E1C;
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: #EDE0C8;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    appearance: none; -webkit-appearance: none;
+  }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A7A5A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 36px; cursor: pointer;
+  }
+  .field select option { background: #1A1510; color: #EDE0C8; }
+  .field select:focus, .field textarea:focus {
+    border-color: #C8922A;
+    box-shadow: 0 0 0 3px rgba(200,146,42,0.12);
+  }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+  .pill {
+    padding: 9px 18px;
+    border-radius: 100px;
+    border: 1.5px solid #EDE0C8;
+    background: transparent;
+    font-size: 13px; color: #EDE0C8;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400; line-height: 1;
+  }
+  .pill:hover { border-color: #C8922A; color: #C8922A; background: rgba(200,146,42,0.08); }
+  .pill.on { background: #C8922A; border-color: #C8922A; color: #0F0C08; font-weight: 500; }
+
+  .btn-wrap { margin-top: 24px; }
+  .btn-main {
+    background: #C8922A; color: #0F0C08;
+    border: none; padding: 16px 44px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 10px;
+    transition: background 0.18s, transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-main:hover:not(:disabled) { background: #E0A830; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(200,146,42,0.3); }
+  .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .spin { width: 15px; height: 15px; border: 2px solid rgba(15,12,8,0.3); border-top-color: #0F0C08; border-radius: 50%; animation: rot 0.7s linear infinite; display: none; }
+  .loading .spin { display: block; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+
+  #result { max-width: 840px; margin: 0 auto; padding: 0 32px 80px; display: none; }
+  #result.show { display: block; }
+  .result-card { background: #1A1510; border: 1px solid #2E2418; border-radius: 12px; overflow: hidden; }
+  .result-header { background: #0F0C08; padding: 20px 32px; border-bottom: 2px solid #C8922A; }
+  .result-header-title { font-family: 'Playfair Display', serif; font-size: 17px; color: #F5E6C0; }
+  .result-header-sub { font-size: 12px; color: #8A7A5A; margin-top: 2px; }
+  .progress-bar { height: 3px; background: #2E2418; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #C8922A, #2A8A6A); transition: width 0.4s ease; width: 0%; }
+
+  #result-body { padding: 36px 32px; font-size: 14px; line-height: 1.8; color: #C8B898; }
+  #result-body h1 { font-family:'Playfair Display',serif; font-size:22px; color:#F5E6C0; margin:0 0 16px; }
+  #result-body h2 { font-family:'Playfair Display',serif; font-size:18px; color:#F5E6C0; margin:32px 0 10px; padding-bottom:8px; border-bottom:1px solid #2E2418; }
+  #result-body h3 { font-size:15px; font-weight:500; color:#EDE0C8; margin:24px 0 8px; }
+  #result-body h4 { font-size:11px; font-weight:500; color:#6A5A42; margin:16px 0 6px; text-transform:uppercase; letter-spacing:1px; }
+  #result-body p { margin:8px 0; }
+  #result-body ul { padding-left:20px; margin:8px 0; }
+  #result-body li { margin:4px 0; }
+  #result-body hr { border:none; border-top:1px solid #2E2418; margin:28px 0; }
+  #result-body strong { font-weight:500; color:#EDE0C8; }
+  #result-body table { width:100%; border-collapse:collapse; font-size:13px; margin:16px 0; display:block; overflow-x:auto; }
+  #result-body th { background:#C8922A; color:#0F0C08; padding:9px 14px; text-align:left; font-size:11px; letter-spacing:1px; text-transform:uppercase; font-weight:500; white-space:nowrap; }
+  #result-body td { padding:9px 14px; border-bottom:1px solid #2E2418; vertical-align:top; color:#C8B898; }
+  #result-body tr:last-child td { border-bottom:none; }
+  #result-body tr:nth-child(even) td { background:#141008; }
+
+  .cursor { display:inline-block; width:2px; height:1em; background:#C8922A; margin-left:2px; animation:blink 1s step-end infinite; vertical-align:text-bottom; }
+  @keyframes blink { 50% { opacity:0; } }
+
+  .result-footer { padding:16px 32px; border-top:1px solid #2E2418; display:flex; gap:10px; }
+  .btn-sec { padding:8px 20px; border-radius:8px; border:1.5px solid #3A2E1C; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; color:#8A7A5A; cursor:pointer; transition:all 0.15s; }
+  .btn-sec:hover { border-color:#C8922A; color:#C8922A; }
+
+  .error-box { background:#2A0C0C; border:1px solid #5A1C1C; border-radius:8px; padding:20px; color:#E08080; font-size:13px; line-height:1.6; }
+
+  footer { background: #080604; padding:20px 32px; text-align:center; font-size:12px; color:#8A7A5A; border-top:1px solid #1A1208; }
+  footer b { color:#C8B898; }
+
+  @media (max-width:600px) {
+    .form-grid { grid-template-columns:1fr; }
+    .form-wrap, #result { padding-left:20px; padding-right:20px; }
+    .hero { padding:36px 20px 48px; }
+    .header { padding:14px 20px; }
+    #result-body { padding:24px 20px; }
+    .result-footer { padding:12px 20px; }
+    .sec-card { padding:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Intercamb<em>IA</em></div>
+  <div class="header-sub">Planejador com IA</div>
+</div>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Powered by Inteligência Artificial</div>
+    <h1>Seu intercâmbio<br><em>planejado em minutos</em></h1>
+    <p>Preencha seu perfil e nossa IA pesquisa cursos, hospedagem, passagens e custos — e entrega um relatório com 3 destinos comparados.</p>
+  </div>
+</div>
+
+<div class="form-wrap">
+  <div class="form-title">Seu perfil de intercambista</div>
+  <div class="form-sub">Quanto mais detalhes, mais preciso será o relatório.</div>
+
+  <div class="sec-card">
+    <div class="sec-card-title">Idioma & Objetivo</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Idioma que deseja aprender</label>
+        <select id="idioma">
+          <option value="">Selecione...</option>
+          <option>Inglês</option><option>Espanhol</option><option>Francês</option>
+          <option>Alemão</option><option>Italiano</option><option>Japonês</option><option>Mandarim</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Seu nível atual</label>
+        <select id="nivel">
+          <option value="">Selecione...</option>
+          <option>Zero — nunca estudei</option>
+          <option>Básico — sei algumas palavras</option>
+          <option>Intermediário — consigo me comunicar</option>
+          <option>Avançado — preciso de fluência</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Objetivo principal</label>
+        <div class="pills" id="g-objetivo">
+          <button class="pill" onclick="pick(this,'g-objetivo')">Carreira / trabalho</button>
+          <button class="pill" onclick="pick(this,'g-objetivo')">Faculdade / vestibular</button>
+          <button class="pill" onclick="pick(this,'g-objetivo')">Turismo / viagens</button>
+          <button class="pill" onclick="pick(this,'g-objetivo')">Fluência total</button>
+          <button class="pill" onclick="pick(this,'g-objetivo')">Certificação IELTS/TOEFL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-card">
+    <div class="sec-card-title">Tipo de Curso</div>
+    <div class="field">
+      <label>Intensidade desejada</label>
+      <div class="pills" id="g-curso">
+        <button class="pill" onclick="pick(this,'g-curso')">Regular (~15h/sem) — bastante tempo livre</button>
+        <button class="pill" onclick="pick(this,'g-curso')">Semi-intensivo (~20h/sem) — equilíbrio</button>
+        <button class="pill" onclick="pick(this,'g-curso')">Intensivo (~30h/sem) — foco máximo</button>
+        <button class="pill" onclick="pick(this,'g-curso')">Não sei — quero recomendação</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-card">
+    <div class="sec-card-title">Período & Finanças</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Duração pretendida</label>
+        <select id="duracao">
+          <option value="">Selecione...</option>
+          <option>2 semanas</option><option>4 semanas (1 mês)</option>
+          <option>6 semanas</option><option>2 meses</option>
+          <option>3 meses</option><option>6 meses</option><option>1 ano</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Época preferida</label>
+        <select id="epoca">
+          <option value="">Indiferente / Não sei</option>
+          <option>Janeiro – Março</option><option>Abril – Junho</option>
+          <option>Julho – Agosto (férias)</option><option>Setembro – Novembro</option>
+          <option>Dezembro – Janeiro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Orçamento total disponível</label>
+        <select id="orcamento">
+          <option value="">Selecione...</option>
+          <option>Até R$ 10.000</option><option>R$ 10.000 – R$ 20.000</option>
+          <option>R$ 20.000 – R$ 35.000</option><option>R$ 35.000 – R$ 60.000</option>
+          <option>Acima de R$ 60.000</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Cidade de origem (para passagem)</label>
+        <select id="origem">
+          <option value="">Selecione...</option>
+          <option>São Paulo (GRU/CGH)</option><option>Rio de Janeiro (GIG/SDU)</option>
+          <option>Brasília (BSB)</option><option>Belo Horizonte (CNF)</option>
+          <option>Porto Alegre (POA)</option><option>Recife (REC)</option>
+          <option>Fortaleza (FOR)</option><option>Salvador (SSA)</option>
+          <option>Outra cidade</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-card">
+    <div class="sec-card-title">Perfil Pessoal</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Sua faixa de idade</label>
+        <select id="idade">
+          <option value="">Selecione...</option>
+          <option>16 – 20 anos</option><option>21 – 29 anos</option>
+          <option>30 – 39 anos</option><option>40 – 49 anos</option><option>50+ anos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Vai sozinho ou acompanhado?</label>
+        <select id="acomp">
+          <option>Sozinho(a)</option><option>Com parceiro(a)</option>
+          <option>Com amigo(s)</option><option>Com família</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Preferência de clima</label>
+        <select id="clima">
+          <option value="">Indiferente</option>
+          <option>Prefiro calor e sol</option>
+          <option>Prefiro clima ameno / frio</option>
+          <option>Prefiro estações definidas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo de cidade preferida</label>
+        <select id="cidade">
+          <option value="">Indiferente</option>
+          <option>Grande metrópole / agitada</option>
+          <option>Cidade média / tranquila</option>
+          <option>Ilha / litoral</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Preferência de hospedagem</label>
+        <div class="pills" id="g-hosped">
+          <button class="pill" onclick="pick(this,'g-hosped')">Família anfitriã (homestay)</button>
+          <button class="pill" onclick="pick(this,'g-hosped')">Residência estudantil</button>
+          <button class="pill" onclick="pick(this,'g-hosped')">Hostel</button>
+          <button class="pill" onclick="pick(this,'g-hosped')">Apartamento compartilhado</button>
+          <button class="pill" onclick="pick(this,'g-hosped')">Sem preferência</button>
+        </div>
+      </div>
+      <div class="field full">
+        <label>Informações adicionais (opcional)</label>
+        <textarea id="extra" placeholder="Ex: tenho visto americano, quero trabalhar enquanto estudo, restrição alimentar..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-wrap">
+    <button class="btn-main" id="btn" onclick="gerar()">
+      <div class="spin"></div>
+      <span>Gerar Relatório</span>
+    </button>
+  </div>
+</div>
+
+<div id="result">
+  <div class="result-card">
+    <div class="result-header">
+      <div class="result-header-title">Relatório IntercambIA</div>
+      <div class="result-header-sub" id="result-meta"></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+    <div id="result-body"></div>
+    <div class="result-footer" id="result-footer" style="display:none">
+      <button class="btn-sec" onclick="copiar()">Copiar relatório</button>
+      <button class="btn-sec" onclick="novo()">Novo planejamento</button>
+    </div>
+  </div>
+</div>
+
+<footer><b>IntercambIA</b> — Valores são estimativas. Confirme com escolas e agências antes de fechar qualquer contrato.</footer>
+
+<script>
+  const sel = {};
+  function pick(el, grp) {
+    document.querySelectorAll(`#${grp} .pill`).forEach(p => p.classList.remove('on'));
+    el.classList.add('on'); sel[grp] = el.textContent.trim();
+  }
+  function v(id) { return document.getElementById(id).value || ''; }
+  function gp(grp) { return sel[grp] || ''; }
+  let fullText = '';
+
+  async function gerar() {
+    const idioma = v('idioma'), nivel = v('nivel'), duracao = v('duracao'),
+          orcamento = v('orcamento'), origem = v('origem');
+    if (!idioma || !nivel || !duracao || !orcamento || !origem) {
+      alert('Preencha pelo menos: idioma, nível, duração, orçamento e cidade de origem.');
+      return;
+    }
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.classList.add('loading');
+    const resultEl = document.getElementById('result'), body = document.getElementById('result-body'),
+          pfill = document.getElementById('pfill'), footer = document.getElementById('result-footer');
+    resultEl.classList.add('show');
+    body.innerHTML = '<span class="cursor"></span>';
+    pfill.style.width = '4%'; footer.style.display = 'none';
+    document.getElementById('result-meta').textContent = `${idioma} · ${duracao} · ${orcamento}`;
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    let prog = 4;
+    const pi = setInterval(() => { prog = Math.min(prog + Math.random() * 2.5, 88); pfill.style.width = prog + '%'; }, 350);
+
+    const prompt = `Você é o IntercambIA, especialista em intercâmbio linguístico para brasileiros. Perfil:
+- Idioma: ${idioma} | Nível: ${nivel} | Objetivo: ${gp('g-objetivo') || 'Não especificado'}
+- Curso: ${gp('g-curso') || 'Semi-intensivo (~20h/sem)'} | Duração: ${duracao} | Época: ${v('epoca') || 'Indiferente'}
+- Orçamento: ${orcamento} | Origem: ${origem} | Idade: ${v('idade') || 'N/I'} | Vai: ${v('acomp')}
+- Clima: ${v('clima') || 'Indiferente'} | Cidade: ${v('cidade') || 'Indiferente'}
+- Hospedagem: ${gp('g-hosped') || 'Sem preferência'} | Extras: ${v('extra') || 'Nenhum'}
+
+Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3 destinos 3) Para cada destino: contexto, vantagens/desvantagens, tabela de cursos (todas modalidades, preço/sem em moeda local e R$, total, ⭐ na escolhida), tabela de hospedagem (todas opções, preço/sem local e R$, total, inclui, distância, ⭐ na recomendada), alimentação, transporte, passagem de ${origem}, resumo de custos com % e total R$ 4) Recomendação final 5) Próximos passos. Cotações: USD≈R$5,15|EUR≈R$5,80|CAD≈R$3,75. Português brasileiro.`;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5-20251022',
+          max_tokens: 4000,
+          stream: true,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || `Erro ${res.status}`); }
+      const reader = res.body.getReader(); const dec = new TextDecoder();
+      fullText = ''; body.innerHTML = '';
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break;
+        for (const line of dec.decode(value, { stream: true }).split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6); if (data === '[DONE]') continue;
+          try { const p = JSON.parse(data); if (p.type === 'content_block_delta' && p.delta?.text) { fullText += p.delta.text; body.innerHTML = md(fullText) + '<span class="cursor"></span>'; } } catch {}
+        }
+      }
+      clearInterval(pi); pfill.style.width = '100%';
+      setTimeout(() => { pfill.style.width = '0%'; }, 800);
+      body.innerHTML = md(fullText); footer.style.display = 'flex';
+    } catch (err) {
+      clearInterval(pi); pfill.style.width = '0%';
+      body.innerHTML = `<div class="error-box"><strong>Erro ao gerar relatório</strong><br><br>${err.message}</div>`;
+    } finally { btn.disabled = false; btn.classList.remove('loading'); }
+  }
+
+  function md(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/^#### (.+)$/gm,'<h4>$1</h4>').replace(/^### (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/^---$/gm,'<hr>')
+      .replace(/(\|.+\|\n?)+/g, tbl => {
+        const rows = tbl.trim().split('\n'); let h = '<div style="overflow-x:auto"><table>';
+        rows.forEach((r,i) => { if (/^\|[\s\-|:]+\|$/.test(r)) return; const cells = r.split('|').filter((_,j,a)=>j>0&&j<a.length-1); const tag=i===0?'th':'td'; h+='<tr>'+cells.map(c=>`<${tag}>${c.trim()}</${tag}>`).join('')+'</tr>'; });
+        return h+'</table></div>';
+      })
+      .replace(/^- (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,m=>`<ul>${m}</ul>`)
+      .replace(/^\d+\. (.+)$/gm,'<li>$1</li>').replace(/\n\n+/g,'</p><p>').replace(/^(?!<)(.+)$/gm,'<p>$1</p>');
+  }
+
+  function copiar() { navigator.clipboard.writeText(fullText).then(() => { const b=event.target; b.textContent='Copiado!'; setTimeout(()=>b.textContent='Copiar relatório',2000); }); }
+  function novo() { document.getElementById('result').classList.remove('show'); window.scrollTo({top:0,behavior:'smooth'}); }
+</script>
+</body>
+</html>
