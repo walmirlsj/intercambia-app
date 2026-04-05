@@ -397,7 +397,7 @@ Produza relatório completo: 1) Cabeçalho do perfil 2) Tabela comparativa dos 3
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5-20251022',
+          model: 'claude-sonnet-4-5',
           max_tokens: 4000,
           stream: true,
           messages: [{ role: 'user', content: prompt }]
