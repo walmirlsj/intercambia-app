@@ -1,0 +1,4 @@
+# Renomeie este arquivo para .env e coloque sua API key da Anthropic abaixo.
+# Obtenha sua chave em: https://console.anthropic.com/settings/keys
+
+ANTHROPIC_API_KEY=sk-ant-sua-chave-aqui
