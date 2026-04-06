@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IntercambIA — Planejador de Intercâmbio com IA</title>
+<title>IntercambIAr — Planejador de Intercâmbio com IA</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -341,7 +341,7 @@
 <div id="result">
   <div class="result-card">
     <div class="result-header">
-      <div class="result-header-title">Relatório IntercambIA</div>
+      <div class="result-header-title">Relatório IntercambIAr</div>
       <div class="result-header-sub" id="result-meta"></div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
@@ -354,7 +354,7 @@
   </div>
 </div>
 
-<footer><b>IntercambIA</b> — Valores são estimativas. Confirme com escolas e agências antes de fechar qualquer contrato.</footer>
+<footer><b>IntercambIAr</b> — Valores são estimativas. Confirme com escolas e agências antes de fechar qualquer contrato.</footer>
 
 <script>
   const sel = {};
@@ -422,7 +422,7 @@
 
     const perfil = `Idioma: ${idioma} | Nível: ${nivel} | Objetivo: ${gp('g-objetivo') || 'Não especificado'} | Curso: ${gp('g-curso') || 'Semi-intensivo (~20h/sem)'} | Duração: ${duracao} | Época: ${v('epoca') || 'Indiferente'} | Orçamento: ${orcamento} | Origem: ${origem} | Idade: ${v('idade') || 'N/I'} | Vai: ${v('acomp')} | Clima: ${v('clima') || 'Indiferente'} | Cidade: ${v('cidade') || 'Indiferente'} | Hospedagem: ${gp('g-hosped') || 'Sem preferência'} | Extras: ${v('extra') || 'Nenhum'}`;
 
-    const base = `Você é o IntercambIA, especialista em intercâmbio linguístico para brasileiros.
+    const base = `Você é o IntercambIAr, especialista em intercâmbio linguístico para brasileiros.
 Perfil do usuário: ${perfil}
 Cotações: USD≈R$5,15 | EUR≈R$5,80 | CAD≈R$3,75. Escreva em português brasileiro.`;
 
@@ -508,7 +508,7 @@ Não repita o cabeçalho nem as opções 1 e 2.`;
 
 
   function gerarPDF() {
-    const titulo = 'Relatório IntercambIA — ' + document.getElementById('result-meta').textContent;
+    const titulo = 'Relatório IntercambIAr — ' + document.getElementById('result-meta').textContent;
     const conteudo = document.getElementById('result-body').innerHTML;
     const janela = window.open('', '_blank');
     janela.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
